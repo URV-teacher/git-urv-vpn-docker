@@ -1,0 +1,36 @@
+services:
+  cloner:
+    image: aleixmt/repo-updater:latest
+    container_name: repo-updater
+    build:
+      context: .
+      dockerfile: Dockerfile
+    tty: true
+    stdin_open: true
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./data:/data
+      - ./repos:/repos
+    user: 1000:1000
+    environment:
+      VPN_PROFILE: VPN_PDI
+    #restart: unless-stopped
+    secrets:
+      - vpn_user
+      - vpn_pass
+      - vpn_profile
+      - vpn_gateway
+    #entrypoint: sh -c "cd /input && make clean && make"
+
+secrets:
+  vpn_user:
+    file: ./secrets/VPN_USER
+  vpn_pass:
+    file: ./secrets/VPN_PASSWORD
+  vpn_profile:
+    file: ./secrets/VPN_PROFILE
+  vpn_gateway:
+    file: ./secrets/VPN_GATEWAY

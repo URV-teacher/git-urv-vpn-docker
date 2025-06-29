@@ -1,0 +1,28 @@
+#!/usr/bin/expect -f
+
+# Read arguments
+set profile [lindex $argv 0]
+set host [lindex $argv 1]
+set username [lindex $argv 2]
+
+# Basic validation
+if {$argc != 3} {
+    puts "Usage: $argv0 <VPN_PROFILE> <HOST> <USERNAME>"
+    exit 1
+}
+
+spawn forticlient vpn edit $profile
+
+expect "Remote Gateway"
+send "$host\r"
+
+expect "Authentication"
+send "2\r"
+
+expect "Username"
+send "$username\r"
+
+expect "Certificate Type"
+send "3\r"
+
+expect eof
