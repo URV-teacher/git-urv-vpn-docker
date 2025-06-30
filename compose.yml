@@ -5,32 +5,36 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    tty: true
-    stdin_open: true
     cap_add:
-      - NET_ADMIN
+      - NET_ADMIN  # Needed or the connections through the VPN never succeed
     devices:
-      - /dev/net/tun
+      - /dev/ppp  # Needed or the connections through the VPN never succeed
     volumes:
       - ./data:/data
       - ./repos:/repos
-    user: 1000:1000
-    environment:
-      VPN_PROFILE: VPN_PDI
-    #restart: unless-stopped
+      - ./logs:/var/log
     secrets:
-      - vpn_user
-      - vpn_pass
-      - vpn_profile
+      - urv_user
+      - urv_pass
       - vpn_gateway
-    #entrypoint: sh -c "cd /input && make clean && make"
+      - vpn_realm
+      - vpn_port
+      - vpn_trusted_cert
+      - git_server
+    #entrypoint: /git_clone.exp <DNI> <GIT_SERVER_BEHIND_FORTINET_VPN> <REPO_NAME> /repos/my-project <PASS>"
 
 secrets:
-  vpn_user:
-    file: ./secrets/VPN_USER
-  vpn_pass:
-    file: ./secrets/VPN_PASSWORD
-  vpn_profile:
-    file: ./secrets/VPN_PROFILE
+  urv_user:
+    file: secrets/URV_USER
+  urv_pass:
+    file: secrets/URV_PASSWORD
+  vpn_realm:
+    file: secrets/VPN_REALM
   vpn_gateway:
     file: ./secrets/VPN_GATEWAY
+  vpn_port:
+    file: ./secrets/VPN_PORT
+  vpn_trusted_cert:
+    file: ./secrets/VPN_TRUSTED_CERT
+  git_server:
+    file: ./secrets/GIT_SERVER
