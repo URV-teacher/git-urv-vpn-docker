@@ -1,0 +1,28 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+# Read secrets literally (no trimming or processing)
+set f [open "/run/secrets/urv_user" r]
+set user [read $f]
+close $f
+
+set f [open "/run/secrets/git_server" r]
+set server [read $f]
+close $f
+
+set f [open "/run/secrets/urv_pass" r]
+set password [read $f]
+close $f
+
+spawn git {*}$argv
+
+expect {
+    -re "$user@$server's password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+

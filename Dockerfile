@@ -16,6 +16,9 @@ RUN apt-get update && \
 COPY ./src/git_clone.exp /git_clone.exp
 RUN chmod +x /git_clone.exp
 
+COPY ./src/git.exp /git.exp
+RUN chmod +x /git.exp
+
 COPY ./src/connect_vpn.sh /connect_vpn.sh
 RUN chmod +x /connect_vpn.sh
 

@@ -108,14 +108,14 @@ done
 
 echo "VPN active. Testing"
 echo "IP solvable? (wait, this usually takes approximately 2 minutes and 10 seconds)"
-if wget 10.117.30.11 -O /var/log/ip.html > /var/log/ip.log 2>&1; then
+if wget 10.117.30.11 -O /var/log/ip.html  2>&1 | tee -a /var/log/ip.log; then
   echo "Yes"
 else
   echo "No. Aborting"
   exit 1
 fi
 echo "DNS solvable?"
-if wget https://intranet.deim.urv.cat/ -O /var/log/dns.html > /var/log/dns.log 2>&1; then
+if wget https://intranet.deim.urv.cat/ -O /var/log/dns.html 2>&1 | tee -a /var/log/dns.log ; then
   echo "Yes"
 else
   echo "No. Aborting"

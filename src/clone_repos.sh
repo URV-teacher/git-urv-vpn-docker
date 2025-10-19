@@ -55,10 +55,7 @@ checkout_test()
 # $2 call
 main()
 {
-  echo "adding key server to known hosts"
-  mkdir -p /root/.ssh
-  ssh-keyscan -H $GIT_SERVER >> /root/.ssh/known_hosts
-  echo "end adding key"
+
   echo "
 ************************************************************************************************************************
 * Computers course 2024-2025
