@@ -91,7 +91,8 @@ set-dns = 1
 EOF
 
 echo "🔐 Connecting to VPN"
-openfortivpn -vv >/var/log/vpn.log 2>&1 &
+openfortivpn -v 2>&1 | tee -a /var/log/vpn.log &
+VPN_PID=$!
 
 # Espera a que la VPN esté activa
 echo "Waiting for the VPN to stablish..."
@@ -108,7 +109,7 @@ done
 
 echo "VPN active. Testing"
 echo "IP solvable? (wait, this usually takes approximately 2 minutes and 10 seconds)"
-if wget 10.117.30.11 -O /var/log/ip.html  2>&1 | tee -a /var/log/ip.log; then
+if wget 10.117.30.11 -O /var/log/ip.html 2>&1 | tee -a /var/log/ip.log; then
   echo "Yes"
 else
   echo "No. Aborting"
@@ -122,3 +123,7 @@ else
   exit 2
 fi
 echo "VPN validated. Continuing"
+
+touch /READY
+echo "Waiting for the termination of the VPN process"
+wait $VPN_PID

@@ -1,10 +1,10 @@
 services:
-  cloner:
+  forti-vpn:
     image: aleixmt/repo-updater:latest
-    container_name: repo-updater
+    container_name: forti-vpn
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: vpn.Dockerfile
     cap_add:
       - NET_ADMIN  # Needed or the connections through the VPN never succeed
     devices:
@@ -21,7 +21,34 @@ services:
       - vpn_port
       - vpn_trusted_cert
       - git_server
-    #entrypoint: /git_clone.exp <DNI> <GIT_SERVER_BEHIND_FORTINET_VPN> <REPO_NAME> /repos/my-project <PASS>"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -f /READY || exit 1"]  # but `sh` must exist
+      interval: 5s        # check every 5 seconds
+      timeout: 2s         # give each check up to 2 seconds
+      retries: 12         # mark unhealthy after 12 failed checks (≈ 1 minute)
+      start_period: 120s   # grace period before health checks begin
+    #entrypoint: /git_clone.exp <DNI> <GIT_SERVER_BEHIND_FORTINET_VPN> <REPO_NAME> /repos/my-project <PASS>
+
+  git:
+    depends_on:
+      forti-vpn:
+        condition: service_healthy
+
+    container_name: git
+    build:
+      context: .
+      dockerfile: git.Dockerfile
+    volumes:
+      - ./repos:/repos
+      - ./logs:/var/log
+    secrets:
+      - urv_user
+      - urv_pass
+      - git_server
+    network_mode: "service:forti-vpn"
+    command: [ "clone" ]
+
+
 
 secrets:
   urv_user:
