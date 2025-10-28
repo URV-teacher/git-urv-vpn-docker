@@ -24,7 +24,7 @@ jobs:
       # Step 3: Build the Docker image
       - name: Build Docker image
         run: |
-          docker build -t aleixmt/git-sshpass:latest .
+          docker build -t aleixmt/git-sshpass:latest git.Dockerfile
 
       # Step 4: Push the Docker image to Docker Hub
       - name: Push Docker image
