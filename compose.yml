@@ -1,6 +1,6 @@
 services:
   forti-vpn:
-    image: aleixmt/repo-updater:latest
+    image: aleixmt/forticlient:latest
     container_name: forti-vpn
     build:
       context: .
@@ -14,22 +14,23 @@ services:
       - ./repos:/repos
       - ./logs:/var/log
     secrets:
-      - urv_user
-      - urv_pass
-      - vpn_gateway
+      - vpn_username
+      - vpn_password
+      - vpn_host
       - vpn_realm
       - vpn_port
-      - vpn_trusted_cert
-      - git_server
+      - vpn_cert
+      - vpn_test_dns
+      - vpn_test_ip
     healthcheck:
       test: ["CMD", "sh", "-c", "test -f /READY || exit 1"]  # but `sh` must exist
       interval: 5s        # check every 5 seconds
       timeout: 2s         # give each check up to 2 seconds
       retries: 12         # mark unhealthy after 12 failed checks (≈ 1 minute)
       start_period: 120s   # grace period before health checks begin
-    #entrypoint: /git_clone.exp <DNI> <GIT_SERVER_BEHIND_FORTINET_VPN> <REPO_NAME> /repos/my-project <PASS>
 
   git:
+    image: aleixmt/git-sshpass:latest
     depends_on:
       forti-vpn:
         condition: service_healthy
@@ -42,26 +43,43 @@ services:
       - ./repos:/repos
       - ./logs:/var/log
     secrets:
-      - urv_user
-      - urv_pass
-      - git_server
+      - ssh_username
+      - ssh_password
+      - ssh_host
+      - git_name
+      - git_email
     network_mode: "service:forti-vpn"
-    command: [ "clone" ]
+    command: [ "clone", "$DNI@$HOST:comp_44" ]
+
 
 
 
 secrets:
-  urv_user:
-    file: secrets/URV_USER
-  urv_pass:
-    file: secrets/URV_PASSWORD
+  ssh_username:
+    file: secrets/SSH_USERNAME
+  ssh_password:
+    file: secrets/SSH_PASSWORD
+  ssh_host:
+    file: secrets/SSH_HOST
+
+  git_name:
+    file: secrets/GIT_NAME
+  git_email:
+    file: secrets/GIT_EMAIL
+
+  vpn_username:
+    file: secrets/VPN_USERNAME
+  vpn_password:
+    file: ./secrets/VPN_PASSWORD
   vpn_realm:
     file: secrets/VPN_REALM
-  vpn_gateway:
-    file: ./secrets/VPN_GATEWAY
+  vpn_host:
+    file: secrets/VPN_HOST
   vpn_port:
     file: ./secrets/VPN_PORT
-  vpn_trusted_cert:
-    file: ./secrets/VPN_TRUSTED_CERT
-  git_server:
-    file: ./secrets/GIT_SERVER
+  vpn_cert:
+    file: ./secrets/VPN_CERT
+  vpn_test_dns:
+    file: ./secrets/VPN_TEST_DNS
+  vpn_test_ip:
+    file: ./secrets/VPN_TEST_IP

@@ -94,9 +94,9 @@ main()
   done
 }
 
-DNI="$(cat /run/secrets/urv_user)"
-PASS="$(cat /run/secrets/urv_pass)"
-GIT_SERVER="$(cat /run/secrets/git_server)"
+DNI="$(cat /run/secrets/ssh_username)"
+PASS="$(cat /run/secrets/ssh_password)"
+GIT_SERVER="$(cat /run/secrets/ssh_host)"
 JQ=jq
 
 #git config --global http.postBuffer 524288000  # Set a larger buffer size
