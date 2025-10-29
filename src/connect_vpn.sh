@@ -52,6 +52,8 @@ set-routes = 1
 set-dns = 1
 EOF
 
+cat /etc/openfortivpn/config
+
 echo "🔐 Connecting to VPN"
 openfortivpn -v 2>&1 | tee -a /var/log/vpn.log &
 VPN_PID=$!
