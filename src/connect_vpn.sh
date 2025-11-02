@@ -11,19 +11,18 @@ set -euo pipefail
 
 read_secret() {
   local name="$1"
-  local lc_name
-  lc_name="$(echo "$name" | tr '[:upper:]' '[:lower:]')"
 
-  local secret_path="/run/secrets/${lc_name}"
-  local file_var="${name}_FILE"
+  local secret_path="/run/secrets/${name}"
+  local file_var="$(echo ${name} | tr '[:lower:]' '[:upper:]')_FILE"
+  local env_var="$(echo ${name} | tr '[:lower:]' '[:upper:]')"
   local val=""
 
   if [ -f "$secret_path" ]; then
     val="$(<"$secret_path")"
   elif [ -n "${!file_var:-}" ] && [ -f "${!file_var}" ]; then
     val="$(<"${!file_var}")"
-  elif [ -n "${!name:-}" ]; then
-    val="${!name}"
+  elif [ -n "${!env_var:-}" ]; then
+    val="${!env_var}"
   fi
 
   printf '%s' "$val"
@@ -52,19 +51,19 @@ set-routes = 1
 set-dns = 1
 EOF
 
-cat /etc/openfortivpn/config
-
 echo "🔐 Connecting to VPN"
 openfortivpn -v 2>&1 | tee -a /var/log/vpn.log &
 VPN_PID=$!
 
-echo "Waiting for the VPN to stablish..."
+echo "Waiting for the VPN to establish..."
 TRIES=0
 while ! grep -q "Remote gateway has allocated a VPN" /var/log/vpn.log; do
     sleep 1
     TRIES=$((TRIES+1))
     if [ $TRIES -gt 20 ]; then
         echo "VPN did not connect after 20 seconds. Aborting."
+        cat /etc/openfortivpn/config
+
         cat /var/log/vpn.log
         exit 1
     fi
