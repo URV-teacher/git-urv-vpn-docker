@@ -31,10 +31,16 @@ set -euo pipefail
 # Use read secret function
 SSH_HOST="$(read_secret ssh_host)"
 
-echo "adding key server to known hosts"
-mkdir -p /root/.ssh
-ssh-keyscan -H $SSH_HOST >> /etc/ssh/ssh_known_hosts
-echo "end adding key"
+echo "Adding server key to known hosts"
+if [ "$EUID" -ne 0 ]; then
+  mkdir -p $HOME/.ssh
+  ssh-keyscan -H $SSH_HOST >> $HOME/.ssh/ssh_known_hosts
+else
+  mkdir -p /root/.ssh
+  ssh-keyscan -H $SSH_HOST >> /etc/ssh/ssh_known_hosts
+  echo "end adding key"
+fi
+
 
 GIT_EMAIL="$(read_secret git_email)"
 GIT_NAME="$(read_secret git_name)"
