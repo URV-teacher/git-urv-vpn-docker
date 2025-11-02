@@ -33,8 +33,8 @@ SSH_HOST="$(read_secret ssh_host)"
 
 echo "Adding server key to known hosts"
 if [ "$EUID" -ne 0 ]; then
-  mkdir -p $HOME/.ssh
-  ssh-keyscan -H $SSH_HOST >> $HOME/.ssh/ssh_known_hosts
+  mkdir -p ~/.ssh
+  ssh-keyscan -H $SSH_HOST >> ~/.ssh/ssh_known_hosts
 else
   mkdir -p /root/.ssh
   ssh-keyscan -H $SSH_HOST >> /etc/ssh/ssh_known_hosts
@@ -49,6 +49,7 @@ git config --global user.email "${GIT_EMAIL}"
 echo "Configuring username"
 git config --global user.email "${GIT_NAME}"
 
+echo "Running git command with SSH password bypass."
 echo "Working directory is: $(pwd)"
-
+echo "Command is: $@"
 /git.exp $@
