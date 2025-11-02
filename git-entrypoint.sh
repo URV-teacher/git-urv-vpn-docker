@@ -43,5 +43,6 @@ git config --global user.email "${GIT_EMAIL}"
 echo "Configuring username"
 git config --global user.email "${GIT_NAME}"
 
-cd /repos
+echo "Working directory is: $(pwd)"
+
 /git.exp $@
