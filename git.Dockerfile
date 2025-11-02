@@ -21,5 +21,10 @@ RUN chmod +x /clone_repos.sh
 COPY git-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+RUN useradd -m -u 1000 app
+USER app
+ENV HOME=/home/app
+WORKDIR /home/app
+
 ENTRYPOINT ["/entrypoint.sh"]
 #CMD []

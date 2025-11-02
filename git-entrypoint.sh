@@ -33,6 +33,7 @@ SSH_HOST="$(read_secret ssh_host)"
 
 echo "Adding server key to known hosts"
 if [ "$EUID" -ne 0 ]; then
+  whoami
   mkdir -p ~/.ssh
   ssh-keyscan -H $SSH_HOST >> ~/.ssh/ssh_known_hosts
 else
