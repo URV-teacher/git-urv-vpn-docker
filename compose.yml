@@ -1,5 +1,6 @@
 services:
   forti-vpn:
+    pull_policy: always
     image: aleixmt/forticlient:latest
     container_name: forti-vpn
     build:
