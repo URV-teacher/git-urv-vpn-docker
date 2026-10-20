@@ -54,4 +54,4 @@ echo "Running git command with SSH password bypass."
 echo "Working directory is: $(pwd)"
 echo "Command is: $@"
 echo "User is: $(whoami)"
-/git.exp $@
+git.exp "$@"

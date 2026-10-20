@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-/connect_vpn.sh
+connect_vpn.sh
 
 
 #/clone_repos.sh

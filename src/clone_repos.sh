@@ -26,7 +26,7 @@ checkout_fusion()
   # Perform clone and checkout code
   rm -rf "/repos/${phase_text}-${call_text}-${repo}-${branch}-fusion"
   #GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-  /git_clone.exp ${DNI} ${GIT_SERVER} ${repo} "/repos/${phase_text}-${call_text}-${repo}-${branch}-fusion" "$PASS"
+  git_clone.exp ${DNI} ${GIT_SERVER} ${repo} "/repos/${phase_text}-${call_text}-${repo}-${branch}-fusion" "$PASS"
   {
     # shellcheck disable=SC2164
     cd "/repos/${phase_text}-${call_text}-${repo}-${branch}-fusion"
@@ -42,7 +42,7 @@ checkout_test()
   # Perform clone and checkout code
   rm -rf "/repos/${phase_text}-${call_text}-${repo}-${branch}-test$1"
   #GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-  /git_clone.exp ${DNI} ${GIT_SERVER} ${repo} "/repos/${phase_text}-${call_text}-${repo}-${branch}-test$1" "$PASS"
+  git_clone.exp ${DNI} ${GIT_SERVER} ${repo} "/repos/${phase_text}-${call_text}-${repo}-${branch}-test$1" "$PASS"
   {
     # shellcheck disable=SC2164
     cd "/repos/${phase_text}-${call_text}-${repo}-${branch}-test$1"

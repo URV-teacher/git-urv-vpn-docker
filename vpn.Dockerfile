@@ -1,18 +1,14 @@
-FROM ubuntu:20.04
+# openfortivpn with the helper of the BMDE to connect to the VPN of the URV (connect_vpn.sh). The installation is done by
+# the scripts in scripts/, the same ones used to install them in a host (see README.md).
+# Base image of the BMDE images (docker-bake.hcl of bmde replaces this stage by the base image being built)
+FROM aleixmt/bmde-base:latest AS bmde-base
 
-ENV DEBIAN_FRONTEND=noninteractive
+FROM bmde-base
 
-RUN apt-get update && \
-    apt-get install -y \
-    openfortivpn \
-    time \
-    wget && \
-    rm -rf /var/lib/apt/lists/*
+RUN --mount=type=bind,target=/component \
+    /component/scripts/install_vpn.sh \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY ./src/connect_vpn.sh /connect_vpn.sh
-RUN chmod +x /connect_vpn.sh
-
-COPY vpn-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chmod=755 vpn-entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

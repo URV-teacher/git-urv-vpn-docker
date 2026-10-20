@@ -1,30 +1,19 @@
-FROM ubuntu:20.04
+# git with the helpers of the BMDE to run git commands through SSH with password (git.exp). The installation is done by
+# the scripts in scripts/, the same ones used to install them in a host (see README.md).
+# Base image of the BMDE images (docker-bake.hcl of bmde replaces this stage by the base image being built)
+FROM aleixmt/bmde-base:latest AS bmde-base
 
-ENV DEBIAN_FRONTEND=noninteractive
+FROM bmde-base
 
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    expect && \
-    rm -rf /var/lib/apt/lists/* && \
-    git config --global advice.detachedHead false
+RUN --mount=type=bind,target=/component \
+    /component/scripts/install_ssh.sh \
+    && /component/scripts/install_git.sh \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY ./src/git_clone.exp /git_clone.exp
-RUN chmod +x /git_clone.exp
+COPY --chmod=755 git-entrypoint.sh /entrypoint.sh
 
-COPY ./src/git.exp /git.exp
-RUN chmod +x /git.exp
-
-COPY ./src/clone_repos.sh /clone_repos.sh
-RUN chmod +x /clone_repos.sh
-
-COPY git-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-RUN useradd -m -u 1000 app
+RUN useradd --create-home --uid 1000 --shell /bin/bash app
 USER app
-ENV HOME=/home/app
 WORKDIR /home/app
 
 ENTRYPOINT ["/entrypoint.sh"]
-#CMD []
