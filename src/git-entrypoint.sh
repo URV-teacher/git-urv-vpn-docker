@@ -48,7 +48,7 @@ GIT_NAME="$(read_secret git_name)"
 echo "Configuring email"
 git config --global user.email "${GIT_EMAIL}"
 echo "Configuring username"
-git config --global user.email "${GIT_NAME}"
+git config --global user.name "${GIT_NAME}"
 
 echo "Running git command with SSH password bypass."
 echo "Working directory is: $(pwd)"
