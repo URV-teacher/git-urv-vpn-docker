@@ -11,4 +11,8 @@ RUN --mount=type=bind,target=/component \
 
 COPY --chmod=755 src/vpn-entrypoint.sh /entrypoint.sh
 
+# Healthy while the VPN works, judged from the state of openfortivpn and from the internal network (vpn_healthcheck.sh).
+# The connection usually takes about 2 minutes
+HEALTHCHECK --interval=5s --timeout=10s --start-period=120s --retries=12 CMD ["vpn_healthcheck.sh"]
+
 ENTRYPOINT ["/entrypoint.sh"]

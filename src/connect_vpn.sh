@@ -1,92 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Connects to the VPN of the URV with openfortivpn, waits until it works (vpn_healthcheck.sh) and stays connected until
+# openfortivpn ends (Ctrl+C disconnects). The same in a host and in a container: run it as your user, without sudo.
+# Only openfortivpn needs root (to create the PPP interface), so it is run with sudo when the user is not root.
+#
+# Credentials (see read_secret.sh): vpn_username, vpn_password, vpn_host, vpn_port, vpn_realm and vpn_cert, and
+# vpn_test_ip and vpn_test_dns, which tell that the internal network works (optional). The configuration of openfortivpn,
+# with the password, and its log are written to VPN_STATE_DIR, only readable by the user, never to /etc or /var/log;
+# the configuration is removed as soon as openfortivpn has read it.
+#
+#   VPN_STATE_DIR  where the configuration and the log go ($XDG_RUNTIME_DIR/bmde-vpn, or /tmp/bmde-vpn-UID)
+#   VPN_TIMEOUT    seconds to wait for the VPN to work before giving up (300)
+set -Eeuo pipefail
 
-set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+# shellcheck source-path=SCRIPTDIR source=read_secret.sh
+source "${SCRIPT_DIR}/read_secret.sh"
 
-# Usage: read_secret <VAR_NAME>
-# Reads secret value from:
-#   1) /run/secrets/<lowercase var name>
-#   2) $<VAR_NAME>_FILE (path to file containing secret)
-#   3) $<VAR_NAME> (value itself)
-# Returns the value on stdout.
+SUDO=()
+if [ "$(id -u)" -ne 0 ]; then
+  SUDO=(sudo)
+fi
+if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "${XDG_RUNTIME_DIR}" ]; then
+  STATE_DIR="${VPN_STATE_DIR:-${XDG_RUNTIME_DIR}/bmde-vpn}"
+else
+  STATE_DIR="${VPN_STATE_DIR:-/tmp/bmde-vpn-$(id -u)}"
+fi
+CONFIG="${STATE_DIR}/config"
+LOG="${STATE_DIR}/vpn.log"
+TIMEOUT="${VPN_TIMEOUT:-300}"
 
-read_secret() {
-  local name="$1"
-
-  local secret_path="/run/secrets/${name}"
-  local file_var="$(echo ${name} | tr '[:lower:]' '[:upper:]')_FILE"
-  local env_var="$(echo ${name} | tr '[:lower:]' '[:upper:]')"
-  local val=""
-
-  if [ -f "$secret_path" ]; then
-    val="$(<"$secret_path")"
-  elif [ -n "${!file_var:-}" ] && [ -f "${!file_var}" ]; then
-    val="$(<"${!file_var}")"
-  elif [ -n "${!env_var:-}" ]; then
-    val="${!env_var}"
-  fi
-
-  printf '%s' "$val"
-}
-
-# Path to secrets
-VPN_USERNAME="$(read_secret vpn_username)"
-VPN_PASSWORD="$(read_secret vpn_password)"
-VPN_HOST="$(read_secret vpn_host)"
-VPN_PORT="$(read_secret vpn_port)"
-VPN_REALM="$(read_secret vpn_realm)"
-VPN_CERT="$(read_secret vpn_cert)"
-
-VPN_TEST_DNS="$(read_secret vpn_test_dns)"
-VPN_TEST_IP="$(read_secret vpn_test_ip)"
-
-# Configure openfortiVPN
-tee /etc/openfortivpn/config > /dev/null <<EOF
-host = $VPN_HOST
-port = $VPN_PORT
-username = $VPN_USERNAME
-password = $VPN_PASSWORD
-realm = $VPN_REALM
-trusted-cert = $VPN_CERT
+install -d -m 700 "${STATE_DIR}"
+(
+  umask 077
+  cat > "${CONFIG}" <<EOF
+host = $(read_secret vpn_host)
+port = $(read_secret vpn_port)
+username = $(read_secret vpn_username)
+password = $(read_secret vpn_password)
+realm = $(read_secret vpn_realm)
+trusted-cert = $(read_secret vpn_cert)
 set-routes = 1
 set-dns = 1
 EOF
+)
+: > "${LOG}"
 
-echo "🔐 Connecting to VPN"
-openfortivpn -v 2>&1 | tee -a /var/log/vpn.log &
+# VPN_PID is the one of sudo when the user is not root: a process of root, which only root can signal (sudo relays the
+# signal to openfortivpn), so it is killed with sudo and checked through /proc instead of with kill -0
+VPN_PID=""
+vpn_running() {
+  [ -n "${VPN_PID}" ] && [ -d "/proc/${VPN_PID}" ]
+}
+cleanup() {
+  rm -f "${CONFIG}"
+  if vpn_running; then
+    "${SUDO[@]}" kill "${VPN_PID}" 2> /dev/null || true
+  fi
+}
+trap cleanup EXIT
+
+# Asks for the password of sudo now, in the foreground: openfortivpn runs in the background
+if [ ${#SUDO[@]} -gt 0 ]; then
+  sudo -v
+fi
+
+echo "🔐 Connecting to the VPN (log: ${LOG})"
+"${SUDO[@]}" openfortivpn -c "${CONFIG}" -v > >(tee -a "${LOG}") 2>&1 &
 VPN_PID=$!
 
-echo "Waiting for the VPN to establish..."
-TRIES=0
-while ! grep -q "Remote gateway has allocated a VPN" /var/log/vpn.log; do
-    sleep 1
-    TRIES=$((TRIES+1))
-    if [ $TRIES -gt 20 ]; then
-        echo "VPN did not connect after 20 seconds. Aborting."
-        cat /etc/openfortivpn/config
-
-        cat /var/log/vpn.log
-        exit 1
-    fi
+echo "Waiting for the VPN to work (this usually takes about 2 minutes)..."
+SECONDS=0
+until "${SCRIPT_DIR}/vpn_healthcheck.sh"; do
+  if ! vpn_running; then
+    echo "openfortivpn ended before the VPN worked. Aborting." >&2
+    exit 1
+  fi
+  if [ "${SECONDS}" -ge "${TIMEOUT}" ]; then
+    echo "The VPN did not work after ${TIMEOUT} seconds. Aborting." >&2
+    "${SCRIPT_DIR}/vpn_healthcheck.sh" -v || true
+    exit 1
+  fi
+  # openfortivpn reads its configuration when it starts, so the password does not stay on disk once it is connecting
+  if [ -f "${CONFIG}" ] && grep -q "Remote gateway has allocated a VPN" "${LOG}"; then
+    rm -f "${CONFIG}"
+  fi
+  sleep 2
 done
+rm -f "${CONFIG}"
 
-echo "VPN active. Testing"
-echo "IP solvable? (wait, this usually takes approximately 2 minutes and 10 seconds)"
-if wget $VPN_TEST_IP -O /var/log/ip.html 2>&1 | tee -a /var/log/ip.log; then
-  echo "Yes"
-else
-  echo "No. Aborting"
-  exit 1
-fi
-
-echo "DNS solvable?"
-if wget $VPN_TEST_DNS -O /var/log/dns.html 2>&1 | tee -a /var/log/dns.log ; then
-  echo "Yes"
-else
-  echo "No. Aborting"
-  exit 2
-fi
-echo "VPN validated. Continuing"
-
-touch /READY  # Healthcheck
-echo "Waiting for the termination of the VPN process"
-wait $VPN_PID
+echo "VPN validated. Waiting for the termination of the VPN process (check it with vpn_healthcheck.sh)"
+wait "${VPN_PID}"

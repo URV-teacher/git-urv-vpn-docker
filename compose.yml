@@ -24,9 +24,9 @@ services:
       - vpn_test_dns
       - vpn_test_ip
     healthcheck:
-      test: ["CMD", "sh", "-c", "test -f /READY || exit 1"]  # but `sh` must exist
+      test: ["CMD", "vpn_healthcheck.sh"]  # openfortivpn running, its tunnel up and the internal network answering
       interval: 5s        # check every 5 seconds
-      timeout: 2s         # give each check up to 2 seconds
+      timeout: 10s        # give each check up to 10 seconds (it requests the test IP and DNS of the VPN)
       retries: 12         # mark unhealthy after 12 failed checks (≈ 1 minute)
       start_period: 120s   # grace period before health checks begin
 
