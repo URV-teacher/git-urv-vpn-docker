@@ -51,4 +51,7 @@ expect {
     eof
 }
 
-
+# Exit with the status of git, so a failed git command (e.g. the server closing the connection) is not reported as a
+# success. `wait` returns {pid spawn_id os_error status}
+lassign [wait] pid spawn_id os_error status
+exit $status
