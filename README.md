@@ -27,6 +27,20 @@ docker build -t aleixmt/git-sshpass -f git.Dockerfile .
 docker build -t aleixmt/forticlient -f vpn.Dockerfile .
 ```
 
+## Git image
+
+The entrypoint of `aleixmt/git-sshpass` runs git with its arguments, answering the SSH password prompt of the git
+server with `git.exp`. Before that, it trusts the key of the git server (`ssh-keyscan` of `ssh_host`), since git can't
+ask to trust it when it runs non-interactively. That needs to reach the server, so for the git commands that don't (e.g.
+a checkout of a repository already cloned), pass `--skip-keyscan` as the first argument, before the ones of git: they
+then run without the VPN nor any network.
+
+```shell
+docker run --rm -v "$PWD:/repos/repo" -w /repos/repo aleixmt/git-sshpass --skip-keyscan checkout COMMIT
+```
+
+`bmde git --skip-keyscan` passes it.
+
 ## VPN
 
 `connect_vpn.sh` connects to the VPN of the URV with openfortivpn, waits until it works and stays connected until it

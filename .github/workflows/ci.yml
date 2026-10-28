@@ -14,6 +14,7 @@ jobs:
       image: aleixmt/git-sshpass
       dockerfile: git.Dockerfile
       tests: test_git.sh test_ssh.sh
+      image_tests: test_skip_keyscan.sh
     secrets: inherit
 
   vpn-image:
