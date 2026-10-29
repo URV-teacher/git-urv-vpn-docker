@@ -4,3 +4,4 @@ set -Eeuo pipefail
 
 git --version
 command -v git.exp git_clone.exp clone_repos.sh expect jq
+echo "git OK"

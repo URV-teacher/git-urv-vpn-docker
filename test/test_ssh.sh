@@ -4,3 +4,4 @@ set -Eeuo pipefail
 
 ssh -V
 command -v ssh-keyscan
+echo "SSH OK"
