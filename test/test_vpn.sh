@@ -13,3 +13,4 @@ if vpn_healthcheck.sh -v; then
   echo "vpn_healthcheck.sh says that the VPN works, but it is not connected" >&2
   exit 1
 fi
+echo "openfortivpn OK"

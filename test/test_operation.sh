@@ -4,3 +4,4 @@
 set -Eeuo pipefail
 
 git clone USER_ID@git.deim.urv.cat:comp_25 .
+echo "git operation OK"
