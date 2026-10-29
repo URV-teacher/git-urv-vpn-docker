@@ -28,6 +28,13 @@ read_secret() {
 
 set -euo pipefail
 
+# bmde runs the container with the uid of the host user, which only has a home in the image if it is 1000 (the user
+# app): otherwise HOME is /, where the git config and the known hosts can't be written
+if [ ! -w "${HOME:-/}" ]; then
+  HOME="$(mktemp -d)"
+  export HOME
+fi
+
 # --skip-keyscan, as the first argument (before the ones of git), skips trusting the key of the git server. It is
 # trusted by default, since git can't ask to trust it when it runs non-interactively, but that needs to reach the
 # server: skip it for the git commands that don't (e.g. a checkout of a repository already cloned), which can then run
