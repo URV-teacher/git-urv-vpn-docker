@@ -28,18 +28,39 @@ read_secret() {
 
 set -euo pipefail
 
-# Use read secret function
-SSH_HOST="$(read_secret ssh_host)"
+# bmde runs the container with the uid of the host user, which only has a home in the image if it is 1000 (the user
+# app): otherwise HOME is /, where the git config and the known hosts can't be written
+if [ ! -w "${HOME:-/}" ]; then
+  HOME="$(mktemp -d)"
+  export HOME
+fi
 
-echo "Adding server key to known hosts"
-if [ "$EUID" -ne 0 ]; then
-  whoami
-  mkdir -p ~/.ssh
-  ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+# --skip-keyscan, as the first argument (before the ones of git), skips trusting the key of the git server. It is
+# trusted by default, since git can't ask to trust it when it runs non-interactively, but that needs to reach the
+# server: skip it for the git commands that don't (e.g. a checkout of a repository already cloned), which can then run
+# without the VPN nor the network of the URV.
+SKIP_KEYSCAN=false
+if [ "${1:-}" = "--skip-keyscan" ]; then
+  SKIP_KEYSCAN=true
+  shift
+fi
+
+if [ "$SKIP_KEYSCAN" = true ]; then
+  echo "Skipping adding the server key to known hosts"
 else
-  mkdir -p /root/.ssh
-  ssh-keyscan -H $SSH_HOST >> /etc/ssh/ssh_known_hosts
-  echo "end adding key"
+  # Use read secret function
+  SSH_HOST="$(read_secret ssh_host)"
+
+  echo "Adding server key to known hosts"
+  if [ "$EUID" -ne 0 ]; then
+    whoami
+    mkdir -p ~/.ssh
+    ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+  else
+    mkdir -p /root/.ssh
+    ssh-keyscan -H $SSH_HOST >> /etc/ssh/ssh_known_hosts
+    echo "end adding key"
+  fi
 fi
 
 
