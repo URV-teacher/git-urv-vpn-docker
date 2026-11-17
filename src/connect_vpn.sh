@@ -4,7 +4,7 @@
 # Only openfortivpn needs root (to create the PPP interface), so it is run with sudo when the user is not root.
 #
 # Credentials (see read_secret.sh): vpn_username, vpn_password, vpn_host, vpn_port, vpn_realm and vpn_cert, and
-# vpn_test_ip and vpn_test_dns, which tell that the internal network works (optional). The configuration of openfortivpn,
+# vpn_test_host, the HOST:PORT that tells that the git server answers (optional, see vpn_healthcheck.sh). The configuration of openfortivpn,
 # with the password, and its log are written to VPN_STATE_DIR, only readable by the user, never to /etc or /var/log;
 # the configuration is removed as soon as openfortivpn has read it.
 #

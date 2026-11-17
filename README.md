@@ -47,8 +47,8 @@ docker run --rm -v "$PWD:/repos/repo" -w /repos/repo aleixmt/git-sshpass --skip-
 is stopped (Ctrl+C). It works the same in a host and in a container: run it as your user, without `sudo` (only
 openfortivpn needs root, and the script runs it with `sudo` when you are not root). It takes the credentials from
 `/run/secrets/NAME` (Docker secrets), from the file in `$NAME_FILE` or from `$NAME`, for each of `vpn_username`,
-`vpn_password`, `vpn_host`, `vpn_port`, `vpn_realm`, `vpn_cert` and, to check that the internal network works,
-`vpn_test_ip` and `vpn_test_dns`:
+`vpn_password`, `vpn_host`, `vpn_port`, `vpn_realm`, `vpn_cert` and, to check that the git server answers through the
+VPN, `vpn_test_host` (`HOST:PORT`, `git.deim.urv.cat:22` by default):
 
 ```shell
 VPN_USERNAME=... VPN_PASSWORD_FILE=~/.vpn_password VPN_HOST=... VPN_PORT=... VPN_REALM=... VPN_CERT=... connect_vpn.sh
@@ -60,6 +60,8 @@ of openfortivpn (with the password, removed as soon as openfortivpn reads it) an
 seconds it waits for the VPN to work (300 by default).
 
 `vpn_healthcheck.sh` tells whether the VPN works (exit status 0) from the state of openfortivpn, without root and
-without any file created by the connection: openfortivpn is running, its PPP interface exists and the test IP and DNS
-name answer, when they are configured. `-v` prints why it does not work. It is the `HEALTHCHECK` of
-`aleixmt/forticlient`.
+without any file created by the connection: openfortivpn is running, its PPP interface exists and a TCP connection to
+`vpn_test_host` succeeds (the SSH port of the git server by default, whose name is resolved with the DNS of the VPN).
+`-v` prints why it does not work. It is the `HEALTHCHECK` of `aleixmt/forticlient`. `vpn_test_ip` and `vpn_test_dns`,
+which it requested by HTTP before, are not used anymore: the URV stopped routing the test IP through the VPN, which made
+the VPN look broken while it worked.
